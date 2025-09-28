@@ -52,25 +52,27 @@ contract EDUStaking is Initializable, AccessControlUpgradeable, ReentrancyGuardU
     }
     
     function unstake(uint256 stakeIndex) external nonReentrant {
-        StakeInfo storage stake = userStakes[msg.sender][stakeIndex];
-        require(stake.amount > 0, "Stake does not exist or already withdrawn");
-        require(block.timestamp >= stake.startTime + stake.lockPeriod, "Lock period not ended");
+        // FIX: Renamed 'stake' to 'stakeInfo' to resolve shadowing warning.
+        StakeInfo storage stakeInfo = userStakes[msg.sender][stakeIndex];
+        require(stakeInfo.amount > 0, "Stake does not exist or already withdrawn");
+        require(block.timestamp >= stakeInfo.startTime + stakeInfo.lockPeriod, "Lock period not ended");
 
-        uint256 principle = stake.amount;
+        uint256 principle = stakeInfo.amount;
         uint256 reward = calculateReward(stakeIndex);
         
-        stake.amount = 0; // Mark as withdrawn
+        stakeInfo.amount = 0; // Mark as withdrawn
         
         eduToken.transfer(msg.sender, principle + reward);
         emit Unstaked(msg.sender, stakeIndex, principle, reward);
     }
 
     function calculateReward(uint256 stakeIndex) public view returns (uint256) {
-        StakeInfo storage stake = userStakes[msg.sender][stakeIndex];
-        if (stake.amount == 0) return 0;
-        uint256 stakingDuration = block.timestamp - stake.startTime;
-        uint256 rewardRate = lockPeriodRates[stake.lockPeriod];
-        return (stake.amount * rewardRate * stakingDuration) / (BASIS_POINTS * SECONDS_PER_YEAR);
+        // FIX: Renamed 'stake' to 'stakeInfo' to resolve shadowing warning.
+        StakeInfo storage stakeInfo = userStakes[msg.sender][stakeIndex];
+        if (stakeInfo.amount == 0) return 0;
+        uint256 stakingDuration = block.timestamp - stakeInfo.startTime;
+        uint256 rewardRate = lockPeriodRates[stakeInfo.lockPeriod];
+        return (stakeInfo.amount * rewardRate * stakingDuration) / (BASIS_POINTS * SECONDS_PER_YEAR);
     }
 
     function getTotalStakedForUser(address user) public view override returns (uint256) {

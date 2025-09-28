@@ -34,14 +34,13 @@ contract AchievementBadge is Initializable, ERC721Upgradeable, AccessControlUpgr
 
         _grantRole(DEFAULT_ADMIN_ROLE, _admin);
         _grantRole(ADMIN_ROLE, _admin);
-        _grantRole(MINTER_ROLE, _minter); // Grant minter role to backend oracle
+        _grantRole(MINTER_ROLE, _minter);
     }
 
     function createBadge(string memory _name, string memory _metadataURI, bool _isSoulbound) external onlyRole(ADMIN_ROLE) returns (uint256) {
         _tokenIds.increment();
         uint256 badgeId = _tokenIds.current();
         badges[badgeId] = Badge({ name: _name, metadataURI: _metadataURI, isSoulbound: _isSoulbound });
-        // Emit event
         return badgeId;
     }
 
@@ -50,21 +49,36 @@ contract AchievementBadge is Initializable, ERC721Upgradeable, AccessControlUpgr
         _safeMint(recipient, badgeId);
     }
     
-    function _baseURI() internal view override returns (string memory) {
+    // FIX: Changed 'view' to 'pure' to resolve the compiler warning.
+    function _baseURI() internal pure override returns (string memory) {
         return "ipfs://";
     }
 
     function tokenURI(uint256 tokenId) public view override returns (string memory) {
-        require(_exists(tokenId), "ERC721Metadata: URI query for nonexistent token");
+        require(_ownerOf(tokenId) != address(0), "ERC721: URI query for nonexistent token");
         return string(abi.encodePacked(_baseURI(), badges[tokenId].metadataURI));
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 tokenId, uint256 batchSize) internal override {
+    function _update(address to, uint256 tokenId, address auth)
+        internal
+        override(ERC721Upgradeable)
+        returns (address)
+    {
+        address from = _ownerOf(tokenId);
         if (badges[tokenId].isSoulbound) {
             require(from == address(0), "Soulbound token cannot be transferred");
         }
-        super._beforeTokenTransfer(from, to, tokenId, batchSize);
+        return super._update(to, tokenId, auth);
     }
 
     function _authorizeUpgrade(address newImplementation) internal override onlyRole(ADMIN_ROLE) {}
+
+    function supportsInterface(bytes4 interfaceId)
+        public
+        view
+        override(ERC721Upgradeable, AccessControlUpgradeable)
+        returns (bool)
+    {
+        return super.supportsInterface(interfaceId);
+    }
 }

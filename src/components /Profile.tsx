@@ -1,17 +1,43 @@
+
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Award, TrendingUp, BookOpen, Target, Zap, Trophy } from "lucide-react";
+import { Calendar, Award, TrendingUp, BookOpen, Target, Zap, Trophy, ChevronsDown, ChevronsUp } from "lucide-react";
+import { StakingCard } from "./StakingCard";
+import { RewardCard } from "./RewardCard";
+
+import { useAccount, useReadContract } from "wagmi";
+import { formatUnits } from "viem";
+import { EDUStakingAddress, EDUStakingABI } from "@/lib/contracts";
+
 
 interface ProfileProps {
   onNavigate: (page: string) => void;
 }
 
 const Profile = ({ onNavigate }: ProfileProps) => {
+  const [showAllAchievements, setShowAllAchievements] = useState(false);
+  const INITIAL_VISIBLE_ACHIEVEMENTS = 4;
+    const { address } = useAccount();
+
+  const { data: stakedBalance, isLoading: isStakedBalanceLoading } = useReadContract({
+      address: EDUStakingAddress,
+      abi: EDUStakingABI,
+      functionName: 'getTotalStakedForUser',
+      args: [address!],
+      query: { enabled: !!address },
+  });
+
+  // Format the BigInt value into a readable string
+  const formattedStakedBalance = stakedBalance
+    ? parseFloat(formatUnits(stakedBalance, 18)).toLocaleString('en-US', { maximumFractionDigits: 2 })
+    : "0";
+
   const user = {
     name: "Alex Thompson",
     initials: "AT",
-    memberSince: "January 2024",
+    memberSince: "January 2024",   
     status: "Rising Star",
     totalTokens: 1250,
     coursesCompleted: 8,
@@ -118,21 +144,23 @@ const Profile = ({ onNavigate }: ProfileProps) => {
     }
   ];
 
+  const achievementsToShow = showAllAchievements ? achievements : achievements.slice(0, INITIAL_VISIBLE_ACHIEVEMENTS);
+
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Profile Header */}
       <Card className="glass p-8">
-        <div className="flex flex-col md:flex-row items-center md:items-start space-y-6 md:space-y-0 md:space-x-8">
+        <div className="flex flex-row items-start space-x-6">
           {/* Avatar */}
-          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-white text-4xl font-bold hover:scale-105 transition-transform cursor-pointer">
+          <div className="w-16 h-16 rounded-full bg-gradient-to-br from-primary to-primary-glow flex items-center justify-center text-white text-4xl font-bold hover:scale-105 transition-transform cursor-pointer flex-shrink-0">
             {user.initials}
           </div>
           
           {/* User Info */}
-          <div className="flex-1 text-center md:text-left space-y-4">
+          <div className="flex-1 text-left space-y-4">
             <div>
               <h1 className="text-3xl font-bold gradient-text">{user.name}</h1>
-              <div className="flex items-center justify-center md:justify-start space-x-2 mt-2">
+              <div className="flex flex-wrap items-center justify-start gap-x-2 gap-y-1 mt-2">
                 <Badge variant="default" className="flex items-center space-x-1">
                   <Award className="w-3 h-3" />
                   <span>{user.status}</span>
@@ -145,7 +173,7 @@ const Profile = ({ onNavigate }: ProfileProps) => {
               </div>
             </div>
             
-            <div className="flex flex-col sm:flex-row items-center space-y-2 sm:space-y-0 sm:space-x-6">
+            <div className="flex flex-row flex-wrap items-center gap-x-6 gap-y-2">
               <div className="flex items-center space-x-2">
                 <span className="text-2xl">🎯</span>
                 <span className="text-lg">Total Earned: <span className="font-bold gradient-text">{user.totalTokens.toLocaleString()} EDU tokens</span></span>
@@ -160,11 +188,13 @@ const Profile = ({ onNavigate }: ProfileProps) => {
       </Card>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="glass p-6 text-center hover:scale-105 transition-all">
-          <div className="text-3xl mb-2">⏱️</div>
-          <div className="text-2xl font-bold gradient-text">{user.hoursLearned}</div>
-          <div className="text-sm text-muted-foreground">Hours Learned</div>
+          <div className="text-3xl mb-2">💰</div>
+          <div className="text-2xl font-bold gradient-text">
+            {isStakedBalanceLoading ? "..." : formattedStakedBalance}
+          </div>
+          <div className="text-sm text-muted-foreground">Total Staked</div>
         </Card>
         
         <Card className="glass p-6 text-center hover:scale-105 transition-all">
@@ -186,6 +216,10 @@ const Profile = ({ onNavigate }: ProfileProps) => {
         </Card>
       </div>
 
+       <div className="grid lg:grid-cols-2 gap-8">
+        <RewardCard />
+        <StakingCard />
+      </div>
       <div className="grid lg:grid-cols-3 gap-8">
         {/* Achievements */}
         <div className="lg:col-span-2">
@@ -201,7 +235,7 @@ const Profile = ({ onNavigate }: ProfileProps) => {
             </div>
             
             <div className="grid md:grid-cols-2 gap-4">
-              {achievements.map((achievement) => (
+              {achievementsToShow.map((achievement) => (
                 <div
                   key={achievement.id}
                   className={`p-4 rounded-lg border-2 transition-all duration-200 ${
@@ -255,6 +289,21 @@ const Profile = ({ onNavigate }: ProfileProps) => {
                 </div>
               ))}
             </div>
+            
+            {achievements.length > INITIAL_VISIBLE_ACHIEVEMENTS && (
+              <div className="mt-6 text-center">
+                <Button
+                  variant="outline"
+                  className="hover:scale-105 transition-all"
+                  onClick={() => setShowAllAchievements(!showAllAchievements)}
+                >
+                  {showAllAchievements ? "Show Less" : "Show More"}
+                  {showAllAchievements 
+                    ? <ChevronsUp className="w-4 h-4 ml-2" /> 
+                    : <ChevronsDown className="w-4 h-4 ml-2" />}
+                </Button>
+              </div>
+            )}
           </Card>
         </div>
 
@@ -303,3 +352,4 @@ const Profile = ({ onNavigate }: ProfileProps) => {
 };
 
 export default Profile;
+  

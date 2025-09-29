@@ -1,287 +1,190 @@
-import { useState } from "react";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Clock, BookOpen, Users, Star, Play, ChevronsDown } from "lucide-react";
+import { ArrowRight, BookOpen, Clock, Coins, Trophy } from "lucide-react";
+import { formatUnits } from "viem";
+import { useAccount, useReadContract } from "wagmi";
 
-interface CoursesProps {
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+// Import your contract address and ABI
+import { EDUTokenAddress, EDUTokenABI } from "@/lib/contracts";
+
+interface DashboardProps {
   onNavigate: (page: string) => void;
 }
 
-const Courses = ({ onNavigate }: CoursesProps) => {
-  const [activeFilter, setActiveFilter] = useState("all");
-  const INITIAL_VISIBLE_COURSES = 3;
-  const [visibleCount, setVisibleCount] = useState(INITIAL_VISIBLE_COURSES);
+const Dashboard = ({ onNavigate }: DashboardProps) => {
+  // Get the connected wallet's address
+  const { address: userAddress, isConnected } = useAccount();
 
-  const handleFilterChange = (filterId: string) => {
-    setActiveFilter(filterId);
-    setVisibleCount(INITIAL_VISIBLE_COURSES);
-  };
+  // Read the user's EDU token balance from the contract
+  const { data: balance, isLoading: isBalanceLoading } = useReadContract({
+    address: EDUTokenAddress,
+    abi: EDUTokenABI,
+    functionName: 'balanceOf',
+    args: [userAddress!],
+    query: {
+      // Only run this query if the user is connected
+      enabled: isConnected && !!userAddress,
+    },
+  });
 
-  const filters = [
-    { id: "all", label: "All Courses", count: 12 },
-    { id: "defi", label: "DeFi", count: 4 },
-    { id: "nfts", label: "NFTs", count: 3 },
-    { id: "smart-contracts", label: "Smart Contracts", count: 2 },
-    { id: "trading", label: "Trading", count: 2 },
-    { id: "beginner", label: "Beginner", count: 5 }
+  // Format the balance from BigInt (wei) to a readable string
+  const formattedBalance = balance
+    ? parseFloat(formatUnits(balance, 18)).toLocaleString('en-US', { maximumFractionDigits: 2 })
+    : "0";
+
+  const stats = [
+    {
+      icon: <Coins className="w-6 h-6 text-accent" />,
+      // Use the live balance data, showing a loading state
+      value: isConnected ? (isBalanceLoading ? "..." : formattedBalance) : "0",
+      label: "EDU Tokens",
+      change: "+200 this week" // This remains static for now
+    },
+    {
+      icon: <BookOpen className="w-6 h-6 text-success" />,
+      value: "8",
+      label: "Courses Done",
+      change: "2 in progress"
+    },
+    {
+      icon: <Clock className="w-6 h-6 text-primary" />,
+      value: "45",
+      label: "Hours Learned",
+      change: "+8 this week"
+    },
+    {
+      icon: <Trophy className="w-6 h-6 text-accent" />,
+      value: "#12",
+      label: "Global Rank",
+      change: "↑ 3 positions"
+    }
   ];
 
-  const courses = [
+  const currentCourses = [
     {
-      id: 1,
       title: "DeFi Fundamentals",
-      description: "Learn the basics of decentralized finance, liquidity pools, and yield farming strategies.",
-      icon: "📊",
-      difficulty: "Beginner",
-      duration: "6 modules • 8 hours",
-      reward: 400,
-      enrolled: 1230,
-      rating: 4.8,
-      categories: ["defi", "beginner"],
-      progress: 65
+      progress: 65,
+      nextLesson: "Liquidity Pools",
+      reward: 200,
+      modules: { completed: 4, total: 6 }
     },
     {
-      id: 2,
       title: "Smart Contract Security",
-      description: "Master smart contract vulnerabilities, auditing techniques, and best practices.",
-      icon: "🔒",
-      difficulty: "Advanced",
-      duration: "8 modules • 12 hours",
-      reward: 600,
-      enrolled: 890,
-      rating: 4.9,
-      categories: ["smart-contracts"],
-      progress: 30
-    },
-    {
-      id: 3,
-      title: "NFT Creation & Trading",
-      description: "Create, mint, and trade NFTs. Learn about marketplaces and digital ownership.",
-      icon: "🎨",
-      difficulty: "Intermediate",
-      duration: "5 modules • 6 hours",
-      reward: 350,
-      enrolled: 2100,
-      rating: 4.7,
-      categories: ["nfts"],
-      progress: 0
-    },
-    {
-      id: 4,
-      title: "Crypto Trading Strategies",
-      description: "Technical analysis, risk management, and advanced trading techniques.",
-      icon: "📈",
-      difficulty: "Intermediate",
-      duration: "7 modules • 10 hours",
-      reward: 500,
-      enrolled: 1560,
-      rating: 4.6,
-      categories: ["trading"],
-      progress: 0
-    },
-    {
-      id: 5,
-      title: "Blockchain Basics",
-      description: "Understanding blockchain technology, consensus mechanisms, and cryptocurrencies.",
-      icon: "⛓️",
-      difficulty: "Beginner",
-      duration: "4 modules • 5 hours",
-      reward: 250,
-      enrolled: 3200,
-      rating: 4.8,
-      categories: ["beginner"],
-      progress: 100
-    },
-    {
-      id: 6,
-      title: "Web3 Development",
-      description: "Build decentralized applications using modern Web3 frameworks and tools.",
-      icon: "💻",
-      difficulty: "Advanced",
-      duration: "10 modules • 15 hours",
-      reward: 750,
-      enrolled: 760,
-      rating: 4.9,
-      categories: ["smart-contracts"],
-      progress: 0
+      progress: 30,
+      nextLesson: "Common Vulnerabilities",
+      reward: 300,
+      modules: { completed: 2, total: 8 }
     }
   ];
-
-  const filteredCourses = courses.filter(course => 
-    activeFilter === "all" || course.categories.includes(activeFilter)
-  );
-
-  const coursesToShow = filteredCourses.slice(0, visibleCount);
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case "Beginner": return "bg-success/10 text-success";
-      case "Intermediate": return "bg-accent/10 text-accent-foreground";
-      case "Advanced": return "bg-destructive/10 text-destructive";
-      default: return "bg-muted/10 text-muted-foreground";
-    }
-  };
 
   return (
     <div className="space-y-8 animate-fade-in">
-      {/* Header */}
-      <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold gradient-text">Course Catalog</h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Master blockchain technology with our comprehensive courses. Earn EDU tokens as you learn!
-        </p>
-      </div>
-
-      {/* Filter Bar */}
-      <Card className="glass p-6">
-        <div className="flex flex-wrap gap-3 justify-center">
-          {filters.map((filter) => (
-            <Button
-              key={filter.id}
-              variant={activeFilter === filter.id ? "default" : "outline"}
-              onClick={() => handleFilterChange(filter.id)}
-              className="hover:scale-105 transition-all duration-200"
-            >
-              {filter.label}
-              <Badge 
-                variant="secondary" 
-                className="ml-2 text-xs"
-              >
-                {filter.count}
-              </Badge>
-            </Button>
-          ))}
+      {/* Welcome Section */}
+      <Card className="glass card-elevated p-8">
+        <div className="text-center">
+          <h1 className="text-4xl font-bold gradient-text mb-4">
+            Welcome back! 👋
+          </h1>
+          <p className="text-xl text-muted-foreground">
+            Ready to continue your crypto learning journey? You're doing amazing!
+          </p>
         </div>
       </Card>
 
-      {/* Courses Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {coursesToShow.map((course) => (
+      {/* Statistics Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {stats.map((stat, index) => (
           <Card 
-            key={course.id}
-            className="glass hover:scale-[1.02] transition-all duration-300 cursor-pointer group overflow-hidden"
-            onClick={() => onNavigate('learning')}
+            key={index} 
+            className="glass p-4 hover:scale-105 transition-all duration-300 cursor-pointer group"
           >
-            {/* Course Thumbnail */}
-            <div className="relative h-48 bg-gradient-to-br from-primary/20 to-primary-glow/20 flex items-center justify-center">
-              <div className="text-6xl group-hover:scale-110 transition-transform duration-300">
-                {course.icon}
+            <div className="flex items-center justify-between mb-2">
+              <div className="p-2 rounded-lg bg-secondary group-hover:scale-110 transition-transform">
+                {stat.icon}
               </div>
-              {course.progress > 0 && (
-                <div className="absolute top-4 right-4">
-                  <Badge 
-                    variant={course.progress === 100 ? "default" : "secondary"}
-                    className="text-xs"
-                  >
-                    {course.progress === 100 ? "✓ Completed" : `${course.progress}% Complete`}
-                  </Badge>
+              <div className="text-right">
+                <div className="text-2xl font-bold gradient-text">
+                  {stat.value}
                 </div>
-              )}
-              <div className="absolute top-4 left-4">
-                <Badge className={getDifficultyColor(course.difficulty)}>
-                  {course.difficulty}
-                </Badge>
+                <div className="text-xs text-muted-foreground">
+                  {stat.change}
+                </div>
               </div>
             </div>
-
-            {/* Course Content */}
-            <div className="p-6 space-y-4">
-              <div className="space-y-2">
-                <h3 className="text-xl font-bold group-hover:text-primary transition-colors">
-                  {course.title}
-                </h3>
-                <p className="text-muted-foreground text-sm line-clamp-2">
-                  {course.description}
-                </p>
-              </div>
-
-              {/* Course Stats */}
-              <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                <div className="flex items-center gap-1">
-                  <Clock className="w-4 h-4" />
-                  <span>{course.duration.split('•')[1]?.trim()}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <BookOpen className="w-4 h-4" />
-                  <span>{course.duration.split('•')[0]?.trim()}</span>
-                </div>
-                <div className="flex items-center gap-1">
-                  <Users className="w-4 h-4" />
-                  <span>{course.enrolled.toLocaleString()}</span>
-                </div>
-              </div>
-
-              {/* Rating */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1">
-                  <Star className="w-4 h-4 fill-accent text-accent" />
-                  <span className="font-medium">{course.rating}</span>
-                  <span className="text-muted-foreground text-sm">
-                    ({course.enrolled.toLocaleString()} students)
-                  </span>
-                </div>
-                <span className="reward-badge text-sm">
-                  +{course.reward} EDU
-                </span>
-              </div>
-
-              {/* Action Button */}
-              <Button 
-                className="w-full group/btn hover:scale-105 transition-all"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onNavigate('learning');
-                }}
-              >
-                <Play className="w-4 h-4 mr-2 group-hover/btn:translate-x-1 transition-transform" />
-                {course.progress > 0 && course.progress < 100 
-                  ? "Continue Learning" 
-                  : course.progress === 100 
-                    ? "Review Course" 
-                    : "Start Learning"
-                }
-              </Button>
-            </div>
+            <h3 className="font-semibold text-foreground text-sm">
+              {stat.label}
+            </h3>
           </Card>
         ))}
       </div>
 
-      {/* Show More Button */}
-      {filteredCourses.length > visibleCount && (
-        <div className="text-center mt-8">
-          <Button
-            size="lg"
-            variant="outline"
-            onClick={() => setVisibleCount(filteredCourses.length)}
-            className="hover:scale-105 transition-all"
+      {/* Current Courses Progress */}
+      <Card className="glass p-8">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-2xl font-bold flex items-center space-x-2">
+            <span>📚</span>
+            <span>Continue Learning</span>
+          </h2>
+          <Button 
+            variant="outline" 
+            onClick={() => onNavigate('courses')}
+            className="hover:scale-105 transition-transform"
           >
-            Show More Courses
-            <ChevronsDown className="w-5 h-5 ml-2" />
+            View All Courses
+            <ArrowRight className="w-4 h-4 ml-2" />
           </Button>
         </div>
-      )}
 
-      {/* Call to Action */}
-      <Card className="glass p-8 text-center mt-8">
-        <div className="max-w-2xl mx-auto space-y-4">
-          <h2 className="text-2xl font-bold gradient-text">Ready to Start Learning?</h2>
-          <p className="text-muted-foreground">
-            Join thousands of learners earning tokens while mastering blockchain technology. 
-            Start with our beginner-friendly courses!
-          </p>
-          <Button 
-            size="lg" 
-            className="hover:scale-105 transition-all"
-            onClick={() => onNavigate('learning')}
-          >
-            Start Your Journey
-            <Play className="w-5 h-5 ml-2" />
-          </Button>
+        <div className="grid md:grid-cols-2 gap-6">
+          {currentCourses.map((course, index) => (
+            <div 
+              key={index}
+              className="glass rounded-xl p-6 hover:scale-[1.02] transition-all duration-300 cursor-pointer"
+              onClick={() => onNavigate('learning')}
+            >
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-xl font-semibold">{course.title}</h3>
+                <span className="reward-badge">
+                  +{course.reward} EDU
+                </span>
+              </div>
+              
+              <div className="space-y-4">
+                <div>
+                  <div className="flex justify-between text-sm mb-2">
+                    <span className="text-muted-foreground">Progress</span>
+                    <span className="font-medium">{course.progress}%</span>
+                  </div>
+                  <Progress value={course.progress} className="h-2" />
+                </div>
+
+                <div className="flex items-center justify-between text-sm">
+                  <div className="text-muted-foreground">
+                    Next: <span className="text-foreground font-medium">{course.nextLesson}</span>
+                  </div>
+                  <div className="text-muted-foreground">
+                    {course.modules.completed}/{course.modules.total} modules
+                  </div>
+                </div>
+
+                <Button 
+                  className="w-full mt-4 group hover:scale-105 transition-all"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onNavigate('learning');
+                  }}
+                >
+                  Continue Learning
+                  <ArrowRight className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
+                </Button>
+              </div>
+            </div>
+          ))}
         </div>
       </Card>
     </div>
   );
 };
 
-export default Courses;
+export default Dashboard;

@@ -22,7 +22,7 @@ Welcome to EduChain, a decentralized learn-to-earn platform built on the Celo bl
 -   **UI Components:** shadcn/ui
 -   **Blockchain Interaction:** wagmi, viem
 -   **Smart Contracts:** Solidity
--   **Blockchain:** Celo (Mainnet)
+-   **Blockchain:**  (Mainnet)
 
 ## 🚀 Getting Started
 
@@ -66,16 +66,9 @@ Follow these instructions to set up and run the project locally for development 
 
 ## 📝 Smart Contracts Overview
 
-All contracts are deployed on the **Celo Mainnet**. They are upgradeable using the UUPS proxy pattern. The addresses listed below are the official **Proxy** addresses that the dApp interacts with.
+All contracts are deployed on the ** Mainnet**. They are upgradeable using the UUPS proxy pattern. The addresses listed below are the official **Proxy** addresses that the dApp interacts with.
 
-| Contract Name          | Purpose                                                                    | Deployed Address (Celo Mainnet)                                                                               |
-| ---------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| **EDUToken**           | The core ERC20 token for rewards and staking.                              | [`0xd324...8551`](https://celoscan.io/address/0xd3240460DECdd7cC6Cd465d58cAFDE66fbcC8551) |
-| **CourseRegistry**     | Manages the creation and listing of all courses on the platform.           | [`0x66af...684a`](https://celoscan.io/address/0x66af7F20AA0Ed1697Aade356f568E28243bF684a) |
-| **AchievementBadge**   | An ERC721 contract for minting NFT achievement badges to users.            | [`0xCAaa...6D43`](https://celoscan.io/address/0xCAa3cEB38076E600EA0A07f2D2Acab9348E56D43) |
-| **RewardDistribution** | Holds the reward funds and handles awarding and claiming of `EDU` tokens.  | [`0x1cbc...B71b`](https://celoscan.io/address/0x1cbcA43488E4c467FfE64D412DC6df6b946aB71b) |
-| **EDUStaking**         | Allows users to stake their `EDU` tokens to earn yield.                    | [`0xa91C...40f8`](https://celoscan.io/address/0xa91C2e49AD3143ea7827f7bf76a64142166140f8) |
-| **CoursePayment**      | (Not yet deployed) Handles payments for paid courses.                      | -                                                                                                             |
+                                                                                    |
 
 ## 📁 Project Structure
 

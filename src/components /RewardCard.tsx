@@ -18,7 +18,6 @@ export const RewardCard = () => {
     
     const { data: hash, writeContract, isPending, reset } = useWriteContract();
 
-    // Read the user's reward data struct from the contract
     const { data: rewardData, refetch: refetchRewardData } = useReadContract({
         address: RewardDistributionAddress,
         abi: RewardDistributionABI,

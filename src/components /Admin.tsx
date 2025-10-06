@@ -1,4 +1,3 @@
-// src/components/Admin.tsx
 
 import { useState } from "react";
 import { useAccount, useReadContract, useWriteContract } from "wagmi";

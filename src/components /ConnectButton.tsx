@@ -1,6 +1,6 @@
 // src/components/ConnectButton.tsx
 
-// --- CHANGE 1: Import useState to control the dialog ---
+
 import { useState } from 'react';
 import { useAccount, useConnect, useDisconnect } from 'wagmi';
 import { Wallet } from "lucide-react";

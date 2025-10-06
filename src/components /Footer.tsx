@@ -11,7 +11,6 @@ interface FooterProps {
   currentPage: string;
   onNavigate: (page: string) => void;
 }
-
 const Footer = ({ currentPage, onNavigate }: FooterProps) => {
   const navItems = [
     { id: "dashboard", label: "Dashboard", icon: <Home className="w-6 h-6" /> },

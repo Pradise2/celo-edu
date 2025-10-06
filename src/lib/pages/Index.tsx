@@ -6,7 +6,6 @@ import Courses from "@/components/Courses";
 import Learning from "@/components/Learning";
 import Leaderboard from "@/components/Leaderboard";
 import Profile from "@/components/Profile";
-
 const Index = () => {
   const [currentPage, setCurrentPage] = useState("dashboard");
 
